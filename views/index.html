@@ -1,0 +1,106 @@
+<html>
+<head>
+    <title>AugR Studio</title>
+    <link rel="stylesheet" href="./css/AugR.css" type="text/css" />
+    <script src="./js/leap-0.6.4.js"></script>
+    <script src="./js/leap-plugins-0.1.6.js"></script>
+    <script src="./js/socket.io.js"></script>
+    <script src="./js/three.js"></script>
+    <script src="./js/aframe092.min.js"></script>
+    <script src="./js/camera-browser.js"></script>
+    <script src="./js/augr-hand-tracking-with-speech-recognition.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(){
+            initScene();
+            sessionManager.connection = io.connect(location.host);
+
+            document.getElementById("connect-to-rfid-menu-button").addEventListener("click", function(){
+              startDictation();
+            });
+        });
+
+        var final_transcript = '';
+        var recognizing = false;
+
+        var two_line = /\n\n/g;
+        var one_line = /\n/g;
+        function linebreak(s) {
+          return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
+        }
+
+        function capitalize(s) {
+          return s.replace(s.substr(0,1), function(m) { return m.toUpperCase(); });
+        }
+
+        function startDictation(event) {
+          if (recognizing) {
+            recognition.stop();
+            return;
+          }
+          final_transcript = '';
+          recognition.lang = 'en-US';
+          recognition.start();
+        /*  final_span.innerHTML = '';
+          interim_span.innerHTML = '';*/
+        }
+
+        if ('webkitSpeechRecognition' in window) {
+
+          var recognition = new webkitSpeechRecognition();
+
+          recognition.continuous = true;
+          recognition.interimResults = true;
+
+          recognition.onstart = function() {
+            recognizing = true;
+          };
+
+          recognition.onerror = function(event) {
+            console.log(event.error);
+          };
+
+          recognition.onend = function() {
+            recognizing = false;
+          };
+
+          recognition.onresult = function(event) {
+            var interim_transcript = '';
+            for (var i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                final_transcript += event.results[i][0].transcript;
+              } else {
+                interim_transcript += event.results[i][0].transcript;
+              }
+            }
+            final_transcript = capitalize(final_transcript);
+            /*final_span.innerHTML = linebreak(final_transcript);
+            interim_span.innerHTML = linebreak(interim_transcript);*/
+            console.log(final_transcript);
+
+          };
+        }
+    </script>
+</head>
+<body>
+</body>
+<!--
+<div>
+  <a href="#" id="start_button" onclick="startDictation(event)">Dictate</a>
+</div>
+
+<div id="results">
+  <span id="final_span" class="final"></span>
+  <span id="interim_span" class="interim"></span>
+</div>-->
+<a-scene embbeded background="transparent: true;" style="width: 100%; height: 100%; display: block; position: absolute; top: 50%; left: 50%; margin: -250px 0 0 -250px; z-index: 50;">
+    <a-entity camera look-controls wasd-controls position="0 1.6 0"></a-entity>
+</a-scene>
+<div id="main-app-container">
+    <video id="webcam-0-container" class="viewer-container" autoplay width="640" height="480" style="border: black 2px solid;"></video>
+    <div id="errorMsg"></div>
+    <div class="menu-container">
+        <div id="link-to-new-rfid-menu-button" class="menu-button">link</div>
+    </div>
+    <div id="connect-to-rfid-menu-button" style="z-index: 500; cursor: pointer;" class="menu-button"></div>
+</div>
+</html>
